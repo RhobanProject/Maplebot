@@ -3,6 +3,7 @@
 
 #include <wirish.h>
 #include "dxl.h"
+#include <i2c.h>
 
 #define DXL_GY85_MODEL 350
 

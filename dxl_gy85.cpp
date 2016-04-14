@@ -4,52 +4,33 @@
 #include "dxl_gy85.h"
 #include "dxl_protocol.h"
 #include "coder.h"
+#include "gy85.h"
 
+#define GY85_ADDR       0x24
 #define BUFFERS 5
-
-struct gy85_values
-{
-    unsigned int sequence;
-    int accelerometer;
-    int gyroscope;
-    int magnetometer;
-};
 
 struct gy85
 {
     i2c_dev *dev;
-    HardwareSerial *port;
-    int state;
+
+    // Last update timestamp
     int lastUpdate;
-    unsigned char checksum;
-    struct gy85_values data[5];
+
+    // Values buffer
+    struct gy85_value values[BUFFERS];
     int pos;
+    
+    // Registers
     struct dxl_registers registers;
 };
 
-void gy85_init(struct gy85 *gy85)
-{
-    i2c_init(gy85->dev);
-    i2c_master_enable(gy85->dev, I2C_FAST_MODE);
-}
-
 void gy85_begin(struct gy85 *gy85, i2c_dev *dev)
 {
-    int i;
-    for (i=0; i<BUFFERS; i++) {
-        gy85->data[i].sequence = 0;
-    }
     gy85->pos = 0;
-    gy85->state = 0;
     gy85->dev = dev;
-    gy85->port = port;
-    gy86->lastUpdate = millis();
+    gy85->lastUpdate = millis();
 
-    gy85_init(gy85);
-}
-
-void gy85_update(struct gy85 *gy85)
-{
+    gy85_init(dev);
 }
 
 void gy85_tick(struct gy85 *gy85)
@@ -58,7 +39,11 @@ void gy85_tick(struct gy85 *gy85)
     int delta = now-gy85->lastUpdate;
     if (delta > 10) {
         gy85->lastUpdate = now;
-        gy85_update(gy85);
+        gy85_update(gy85->dev, &gy85->values[gy85->pos]);
+        gy85->pos++;
+        if (gy85->pos >= BUFFERS) {
+            gy85->pos = 0;
+        }
     } else if (delta < 0) {
         gy85->lastUpdate = millis();
     }
@@ -81,11 +66,12 @@ static void dxl_gy85_read_data(volatile struct dxl_device *self, ui8 id, ui8 add
 {
     struct gy85 *gy85 = (struct gy85*)self->data;
 
-    if (addr == IMU_ADDR) {
-        memcpy(values, ((ui8*)&gy85->data), length);
+    if (addr == GY85_ADDR) {
+        memcpy(values, ((ui8*)&gy85->values), length);
     } else {
         memcpy(values, ((ui8*)&gy85->registers)+addr, length);
     }
+    
     *error = 0;
 }
 
@@ -108,7 +94,7 @@ void dxl_gy85_init(volatile struct dxl_device *device, ui8 id, i2c_dev *dev)
     device->data = (void *)gy85;
     device->tick = gy85_tick;
 
-    gy85_begin(gy85, port);
+    gy85_begin(gy85, dev);
 
     gy85->registers.eeprom.modelNumber = DXL_GY85_MODEL;
     gy85->registers.eeprom.firmwareVersion = 1;

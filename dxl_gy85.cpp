@@ -18,6 +18,7 @@ struct gy85
 
     // Values buffer
     struct gy85_value values[BUFFERS];
+    uint32_t sequence;
     int pos;
     
     // Registers
@@ -26,6 +27,7 @@ struct gy85
 
 void gy85_begin(struct gy85 *gy85, i2c_dev *dev)
 {
+    gy85->sequence = 0;
     gy85->pos = 0;
     gy85->dev = dev;
     gy85->lastUpdate = millis();
@@ -37,8 +39,10 @@ void gy85_tick(struct gy85 *gy85)
 {
     int now = millis();
     int delta = now-gy85->lastUpdate;
-    if (delta > 10) {
-        gy85->lastUpdate = now;
+    if (delta >= 10) {
+        gy85->lastUpdate += 10;
+        gy85->sequence++;
+        gy85->values[gy85->pos].sequence = gy85->sequence;
         gy85_update(gy85->dev, &gy85->values[gy85->pos]);
         gy85->pos++;
         if (gy85->pos >= BUFFERS) {

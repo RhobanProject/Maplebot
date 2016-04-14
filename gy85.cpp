@@ -41,7 +41,7 @@ struct i2c_msg packet;
 
 // Gyroscope packets
 static uint8 gyro_reset[] = {0x3e, 0x80};
-static uint8 gyro_scale[] = {0x16, 0x1b};
+static uint8 gyro_scale[] = {0x16, 0b00011010};
 static uint8 gyro_100hz[] = {0x15, 0x09};
 static uint8 gyro_pll[] = {0x3e, 0x00};
 static uint8 gyro_req[] = {0x1d};

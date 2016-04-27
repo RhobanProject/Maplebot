@@ -238,11 +238,12 @@ static void tick(volatile struct dxl_device *self)
                 // are the device that will respond
                 syncReadResponse->process = true;
                 syncReadMode = false;
+                digitalWrite(BOARD_LED_PIN, LOW);
             } else {
                 if (serial->syncReadCurrent < 0) {
                     // Sending the first packet
                     syncReadSendPacket(serial);
-                } else if (serial->syncReadCurrent < serial->syncReadCount) {
+                } else if (serial->syncReadCount) {
                     // Reading available data from the port
                     while (serial->port->available() && !self->packet.process) {
                         dxl_packet_push_byte(&serial->syncReadPacket, serial->port->read());
@@ -267,6 +268,7 @@ static void tick(volatile struct dxl_device *self)
                         if (serial->syncReadCurrent >= serial->syncReadCount) {
                             // The process is over for this bus
                             syncReadDevices--;
+                            serial->syncReadCount = 0;
                         } else {
                             // Sending the next packet
                             syncReadSendPacket(serial);
@@ -305,6 +307,7 @@ static void process(volatile struct dxl_device *self, volatile struct dxl_packet
         if (packet->instruction == DXL_SYNC_READ && packet->parameter_nb > 2) {
             ui8 i;
             syncReadMode = true;
+            digitalWrite(BOARD_LED_PIN, HIGH);
             syncReadAddr = packet->parameters[0];
             syncReadLength = packet->parameters[1];
             syncReadDevices = 0;
@@ -365,7 +368,7 @@ void dxl_serial_init(volatile struct dxl_device *device, int index)
     } else if (index == 2) {
         serial->port = &Serial2;
         serial->direction = DIRECTION2;
-        serial->channel = DMA_CH3;
+        serial->channel = DMA_CH7;
     } else {
         serial->port = &Serial3;
         serial->direction = DIRECTION3;
@@ -373,6 +376,7 @@ void dxl_serial_init(volatile struct dxl_device *device, int index)
     }
             
     serial->syncReadCurrent = -1;
+    serial->syncReadCount = 0;
 
     initSerial(serial);
 

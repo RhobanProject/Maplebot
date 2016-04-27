@@ -11,7 +11,7 @@
 #include "dxl_serial.h"
 #include "dxl_proxy.h"
 #include "dxl_magnetic_coder.h"
-#include "dxl_imu.h"
+#include "dxl_gy85.h"
 #include "dxl_pins.h"
     
 struct dxl_bus bus;
@@ -50,16 +50,19 @@ void setup()
     // dxl_servo_init(&slaves[k++], 16, 221);
     
     // Add the Serial-forward dynamixel device as a slave
-    dxl_serial_init(&slaves[k++]);
+    dxl_serial_init(&slaves[k++], 1);
+    dxl_serial_init(&slaves[k++], 2);
+    dxl_serial_init(&slaves[k++], 3);
 
     // Add the ADC dynamixel on the bus, id 240
     // dxl_adc_init(&slaves[k++], 240);
 
     // Add the IMU dynamixel, id 241, port Serial2
-    dxl_imu_init(&slaves[k++], 241, &Serial2);
+    // dxl_gy85_init(&slaves[k++], 241, I2C2);
 
     // Adding pins
-    dxl_pins_init(&slaves[k++], 242);
+    // XXX: Activate
+    // dxl_pins_init(&slaves[k++], 242);
     
     // Add a magnetic coder on the bus, ID 235
     // dxl_magnetic_coder_init(&slaves[k++], 3, 235);

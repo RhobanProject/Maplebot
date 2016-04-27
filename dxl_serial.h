@@ -5,6 +5,6 @@
 
 #define DXL_DEFAULT_BAUDRATE 1000000
 
-void dxl_serial_init(volatile struct dxl_device *device);
+void dxl_serial_init(volatile struct dxl_device *device, int index);
 
 #endif // DXL_SERIAL_H

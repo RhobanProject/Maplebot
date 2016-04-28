@@ -197,6 +197,8 @@ void gy85_update(i2c_dev *dev, struct gy85_value *value, int sensor)
     if (!gy85initialized) {
         gy85_init(dev);
     } else {
+        // XXX: We should populate value with the last known value, even if
+        // it fails
         if (sensor == 0) gyro_update(dev, value);
         if (sensor == 1) magn_update(dev, value);
         if (sensor == 2) acc_update(dev, value);

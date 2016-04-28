@@ -13,6 +13,11 @@ struct gy85
 {
     i2c_dev *dev;
 
+    // State
+    // 0-3: updating devices
+    // 4: waiting
+    int state;
+
     // Last update timestamp
     int lastUpdate;
 
@@ -39,17 +44,25 @@ void gy85_tick(struct gy85 *gy85)
 {
     int now = millis();
     int delta = now-gy85->lastUpdate;
-    if (delta >= 10) {
-        gy85->lastUpdate += 10;
-        gy85->sequence++;
-        gy85->values[gy85->pos].sequence = gy85->sequence;
-        gy85_update(gy85->dev, &gy85->values[gy85->pos]);
-        gy85->pos++;
-        if (gy85->pos >= BUFFERS) {
-            gy85->pos = 0;
+
+    if (gy85->state < 3) {
+        gy85_update(gy85->dev, &gy85->values[gy85->pos], gy85->state);
+        gy85->state++;
+        if (gy85->state >= 3) {
+            gy85->sequence++;
+            gy85->values[gy85->pos].sequence = gy85->sequence;
+            gy85->pos++;
+            if (gy85->pos >= BUFFERS) {
+                gy85->pos = 0;
+            }
         }
-    } else if (delta < 0) {
-        gy85->lastUpdate = millis();
+    } else {
+        if (delta >= 10) {
+            gy85->lastUpdate += 10;
+            gy85->state = 0;
+        } else if (delta < 0) {
+            gy85->lastUpdate = millis();
+        }
     }
 };
 
@@ -100,6 +113,7 @@ void dxl_gy85_init(volatile struct dxl_device *device, ui8 id, i2c_dev *dev)
 
     gy85_begin(gy85, dev);
 
+    gy85->state = 4;
     gy85->registers.eeprom.modelNumber = DXL_GY85_MODEL;
     gy85->registers.eeprom.firmwareVersion = 1;
     gy85->registers.eeprom.id = id;

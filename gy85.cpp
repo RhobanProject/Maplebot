@@ -5,7 +5,16 @@
 
 #define I2C_TIMEOUT 2
 
-static bool initialized = false;
+static bool gy85initialized = false;
+
+extern "C" {
+    void led_on() {
+        digitalWrite(BOARD_LED_PIN, HIGH);
+    }
+    void led_off() {
+        digitalWrite(BOARD_LED_PIN, LOW);
+    }
+}
 
 int32 i2c_master_xfer_reinit(i2c_dev *dev,
         i2c_msg *msgs,
@@ -14,7 +23,7 @@ int32 i2c_master_xfer_reinit(i2c_dev *dev,
 {
     int32 r = i2c_master_xfer(dev, msgs, num, timeout);
     if (r != 0) {
-        initialized = false;
+        gy85initialized = false;
     }
     return r;
 }
@@ -60,8 +69,6 @@ static uint8 magn_req[] = {0x03};
 
 void gy85_init(i2c_dev *dev)
 {
-    bool error = false;
-
     // Initializing I2C bus
     i2c_init(dev);
     i2c_master_enable(dev, I2C_FAST_MODE);
@@ -106,16 +113,16 @@ void gy85_init(i2c_dev *dev)
     packet.data = gyro_pll;
     if (i2c_master_xfer_reinit(dev, &packet, 1, I2C_TIMEOUT) != 0) goto init_error;
 
-    initialized = true;
+    gy85initialized = true;
     return;
 
 init_error:
-    initialized = false;
+    gy85initialized = false;
 }
 
 void magn_update(i2c_dev *dev, struct gy85_value *values)
 {
-    if (!initialized) return;
+    if (!gy85initialized) return;
 
     packet.addr = MAGN_ADDR;
     packet.flags = 0;
@@ -139,7 +146,7 @@ void magn_update(i2c_dev *dev, struct gy85_value *values)
 
 void gyro_update(i2c_dev *dev, struct gy85_value *values)
 {
-    if (!initialized) return;
+    if (!gy85initialized) return;
 
     packet.addr = GYRO_ADDR;
     packet.flags = 0;
@@ -163,7 +170,7 @@ void gyro_update(i2c_dev *dev, struct gy85_value *values)
 
 void acc_update(i2c_dev *dev, struct gy85_value *values)
 {
-    if (!initialized) return;
+    if (!gy85initialized) return;
 
     packet.addr = ACC_ADDR;
     packet.flags = 0;
@@ -185,13 +192,13 @@ void acc_update(i2c_dev *dev, struct gy85_value *values)
     values->acc_z = VALUE_SIGN(values->acc_z, 16);
 }
 
-void gy85_update(i2c_dev *dev, struct gy85_value *value)
+void gy85_update(i2c_dev *dev, struct gy85_value *value, int sensor)
 {
-    if (!initialized) {
+    if (!gy85initialized) {
         gy85_init(dev);
     } else {
-        gyro_update(dev, value);
-        magn_update(dev, value);
-        acc_update(dev, value);
+        if (sensor == 0) gyro_update(dev, value);
+        if (sensor == 1) magn_update(dev, value);
+        if (sensor == 2) acc_update(dev, value);
     }
 }

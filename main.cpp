@@ -20,6 +20,7 @@ volatile struct dxl_device slaves[8];
 
 void button()
 {
+    digitalWrite(BOARD_LED_PIN, HIGH);
 }
 
 void setup()
@@ -36,6 +37,8 @@ void setup()
     digitalWrite(BOARD_LED_PIN, LOW);
 
     nvic_irq_set_priority(NVIC_USART1, 0x0);
+    nvic_irq_set_priority(NVIC_USART2, 0x0);
+    nvic_irq_set_priority(NVIC_USART3, 0x0);
 
     attachInterrupt(BOARD_BUTTON_PIN, button, RISING);
 
@@ -58,7 +61,7 @@ void setup()
     // dxl_adc_init(&slaves[k++], 240);
 
     // Add the IMU dynamixel, id 241, port Serial2
-    // dxl_gy85_init(&slaves[k++], 241, I2C2);
+    dxl_gy85_init(&slaves[k++], 241, I2C1);
 
     // Adding pins
     // XXX: Activate
@@ -77,6 +80,7 @@ void setup()
     for (k--; k>=0; k--) {
         dxl_add_slave(&bus, &slaves[k]);
     }
+    enableDebugPorts();
 }
 
 void loop()

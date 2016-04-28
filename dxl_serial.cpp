@@ -45,6 +45,7 @@ struct serial
     dma_tube_config tube_config;
     dma_channel channel;
     bool txComplete;
+    bool dmaEvent;
 
     // Registers
     struct dxl_registers registers;
@@ -73,23 +74,41 @@ struct dxl_packet *syncReadResponse;
 static void dma_event(struct serial *serial)
 {
     // DMA completed
-    serial->txComplete = true;
-    serial->port->waitDataToBeSent();
-    receiveMode(serial);
     dma_disable(DMA1, serial->channel);
-    serial->syncReadStart = syncReadTimer.getCount();
+    serial->dmaEvent = true;
+}
+static void tc_event(struct serial *serial)
+{
+    if (serial->dmaEvent) {
+        serial->dmaEvent = false;
+        serial->txComplete = true;
+        receiveMode(serial);
+        serial->syncReadStart = syncReadTimer.getCount();
+    }
 }
 static void DMAEvent1()
 {
     dma_event(serials[1]);
 }
+static void usart1_tc()
+{
+    tc_event(serials[1]);
+}
 static void DMAEvent2()
 {
     dma_event(serials[2]);
 }
+static void usart2_tc()
+{
+    tc_event(serials[2]);
+}
 static void DMAEvent3()
 {
     dma_event(serials[3]);
+}
+static void usart3_tc()
+{
+    tc_event(serials[3]);
 }
 
 static void setupSerialDMA(struct serial *serial, int n)
@@ -181,6 +200,7 @@ void sendSerialPacket(struct serial *serial, volatile struct dxl_packet *packet)
 #if 1
     // Then runs the DMA transfer
     serial->txComplete = false;
+    serial->dmaEvent = false;
     setupSerialDMA(serial, n);
     dma_tube_cfg(DMA1, serial->channel, &serial->tube_config);
     dma_set_priority(DMA1, serial->channel, DMA_PRIORITY_VERY_HIGH);
@@ -188,6 +208,7 @@ void sendSerialPacket(struct serial *serial, volatile struct dxl_packet *packet)
     if (serial->index == 2) dma_attach_interrupt(DMA1, serial->channel, DMAEvent2);
     if (serial->index == 3) dma_attach_interrupt(DMA1, serial->channel, DMAEvent3);
     dma_enable(DMA1, serial->channel);
+    usart_tcie(serial->port->c_dev()->regs, 1);
 #else
     // Directly send the packet
     char buffer[1024];
@@ -369,6 +390,7 @@ void dxl_serial_init(volatile struct dxl_device *device, int index)
 
     serial->index = index;
     serial->txComplete = true;
+    serial->dmaEvent = false;
 
     if (index == 1) {
         serial->port = &Serial1;
@@ -394,6 +416,10 @@ void dxl_serial_init(volatile struct dxl_device *device, int index)
     
         // Initializing DMA
         dma_init(DMA1);
+
+        usart1_tc_handler = usart1_tc;
+        usart2_tc_handler = usart2_tc;
+        usart3_tc_handler = usart3_tc;
 
         // Reset allocation
         for (unsigned int k=0; k<sizeof(devicePorts); k++) {

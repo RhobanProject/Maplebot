@@ -72,14 +72,12 @@ struct dxl_packet *syncReadResponse;
 
 static void dma_event(struct serial *serial)
 {
-    digitalWrite(BOARD_LED_PIN, HIGH);
     // DMA completed
     serial->txComplete = true;
     serial->port->waitDataToBeSent();
     receiveMode(serial);
     dma_disable(DMA1, serial->channel);
     serial->syncReadStart = syncReadTimer.getCount();
-    digitalWrite(BOARD_LED_PIN, LOW);
 }
 static void DMAEvent1()
 {

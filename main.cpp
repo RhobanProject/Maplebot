@@ -39,6 +39,9 @@ void setup()
     nvic_irq_set_priority(NVIC_USART1, 0x0);
     nvic_irq_set_priority(NVIC_USART2, 0x0);
     nvic_irq_set_priority(NVIC_USART3, 0x0);
+    nvic_irq_set_priority(NVIC_DMA_CH2, 0x0);
+    nvic_irq_set_priority(NVIC_DMA_CH4, 0x0);
+    nvic_irq_set_priority(NVIC_DMA_CH7, 0x0);
 
     attachInterrupt(BOARD_BUTTON_PIN, button, RISING);
 

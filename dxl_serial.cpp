@@ -28,6 +28,8 @@ struct serial
     // Transmission buffer
     char outputBuffer[DXL_BUFFER_SIZE];
 
+    // Number of bytes to send
+    ui8 toSend;
     // IDs of devices that we should sync read
     ui8 syncReadIds[64];
     // Offset of the data in the packet
@@ -74,17 +76,17 @@ struct dxl_packet *syncReadResponse;
 static void dma_event(struct serial *serial)
 {
     // DMA completed
-    dma_disable(DMA1, serial->channel);
     serial->dmaEvent = true;
+    dma_disable(DMA1, serial->channel);
+    usart_tcie(serial->port->c_dev()->regs, 1);
 }
 static void tc_event(struct serial *serial)
 {
-    if (serial->dmaEvent) {
-        serial->dmaEvent = false;
-        serial->txComplete = true;
-        receiveMode(serial);
-        serial->syncReadStart = syncReadTimer.getCount();
-    }
+    usart_tcie(serial->port->c_dev()->regs, 0);
+    serial->dmaEvent = false;
+    serial->txComplete = true;
+    receiveMode(serial);
+    serial->syncReadStart = syncReadTimer.getCount();
 }
 static void DMAEvent1()
 {
@@ -207,8 +209,8 @@ void sendSerialPacket(struct serial *serial, volatile struct dxl_packet *packet)
     if (serial->index == 1) dma_attach_interrupt(DMA1, serial->channel, DMAEvent1);
     if (serial->index == 2) dma_attach_interrupt(DMA1, serial->channel, DMAEvent2);
     if (serial->index == 3) dma_attach_interrupt(DMA1, serial->channel, DMAEvent3);
+    usart_tcie(serial->port->c_dev()->regs, 0);
     dma_enable(DMA1, serial->channel);
-    usart_tcie(serial->port->c_dev()->regs, 1);
 #else
     // Directly send the packet
     char buffer[1024];

@@ -67,8 +67,7 @@ void setup()
     dxl_gy85_init(&slaves[k++], 241, I2C1);
 
     // Adding pins
-    // XXX: Activate
-    // dxl_pins_init(&slaves[k++], 242);
+    dxl_pins_init(&slaves[k++], 242);
     
     // Add a magnetic coder on the bus, ID 235
     // dxl_magnetic_coder_init(&slaves[k++], 3, 235);
@@ -83,7 +82,6 @@ void setup()
     for (k--; k>=0; k--) {
         dxl_add_slave(&bus, &slaves[k]);
     }
-    enableDebugPorts();
 }
 
 void loop()

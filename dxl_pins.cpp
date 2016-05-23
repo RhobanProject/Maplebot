@@ -5,7 +5,7 @@
 #include "dxl_protocol.h"
 
 #define NB_PINS 7
-static int pins[NB_PINS] = {5, 6, 19, 20, 21, 22, 18};
+static int pins[NB_PINS] = {27, 22, 21, 20, 19, 18, 17};
 
 static bool dxl_check_id(volatile struct dxl_device *self, ui8 id)
 {

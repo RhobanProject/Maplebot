@@ -274,12 +274,12 @@ static void dxl_serial_tick(volatile struct dxl_device *self)
                 // are the device that will respond
                 syncReadResponse->process = true;
                 syncReadMode = false;
-            } else {
+            } else if (serial->syncReadCount) {
                 if (serial->syncReadCurrent < 0) {
                     // Sending the first packet
                     serial->syncReadCurrent = 0;
                     syncReadSendPacket(serial);
-                } else if (serial->syncReadCount) {
+                } else {
                     // Reading available data from the port
                     while (serial->port->available() && !serial->syncReadPacket.process) {
                         dxl_packet_push_byte(&serial->syncReadPacket, serial->port->read());

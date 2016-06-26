@@ -8,7 +8,7 @@
 #define DXL_BUFFER_SIZE 300
 
 // Maximum parameters in a packet
-#define DXL_MAX_PARAMS  220
+#define DXL_MAX_PARAMS  240
 
 typedef unsigned char ui8;
 

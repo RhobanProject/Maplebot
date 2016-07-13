@@ -4,7 +4,7 @@
 
 ## Local configuration
 LIB_MAPLE_HOME = ../LibMaple
-PATH := $(CURDIR)/../BinutilsArm/bin:$(PATH)
+#PATH := $(CURDIR)/../BinutilsArm/bin:$(PATH)
 
 ##
 ## Useful paths, constants, etc.

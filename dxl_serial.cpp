@@ -42,6 +42,8 @@ struct serial
     struct dxl_packet syncReadPacket;
     // Timestamp of the starting
     uint32_t syncReadStart;
+    // Timestamp for sending data
+    uint32_t packetSent;
 
     // DMA
     dma_tube_config tube_config;
@@ -73,15 +75,20 @@ ui8 syncReadLength = 0;
 // Packet for sync read
 struct dxl_packet *syncReadResponse;
 
+static void serial_received(struct serial *serial)
+{
+    dma_disable(DMA1, serial->channel);
+    usart_tcie(serial->port->c_dev()->regs, 0);
+    serial->dmaEvent = false;
+    serial->txComplete = true;
+    receiveMode(serial);
+    serial->syncReadStart = syncReadTimer.getCount();
+}
+
 static void tc_event(struct serial *serial)
 {
     if (serial->dmaEvent) {
-        dma_disable(DMA1, serial->channel);
-        usart_tcie(serial->port->c_dev()->regs, 0);
-        serial->dmaEvent = false;
-        serial->txComplete = true;
-        receiveMode(serial);
-        serial->syncReadStart = syncReadTimer.getCount();
+        serial_received(serial);
     }
 }
 
@@ -213,6 +220,7 @@ void sendSerialPacket(struct serial *serial, volatile struct dxl_packet *packet)
     if (serial->index == 3) dma_attach_interrupt(DMA1, serial->channel, DMAEvent3);
     usart_tcie(serial->port->c_dev()->regs, 1);
     dma_enable(DMA1, serial->channel);
+    serial->packetSent = millis();
 #else
     // Directly send the packet
     char buffer[1024];
@@ -251,6 +259,11 @@ static void dxl_serial_tick(volatile struct dxl_device *self)
 {
     struct serial *serial = (struct serial*)self->data;
     static int baudrate = DXL_DEFAULT_BAUDRATE;
+
+    // Timeout on sending packet, this should never happen
+    if (!serial->txComplete && ((millis() - serial->packetSent) > 3)) {
+        serial_received(serial);
+    }
 
     /*
     if (!serial->txComplete) {

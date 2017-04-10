@@ -5,7 +5,7 @@
 #define DXL_BROADCAST   0xFE
 
 // Size limit for a buffer containing a dynamixel packet
-#define DXL_BUFFER_SIZE 300
+#define DXL_BUFFER_SIZE 330
 
 // Maximum parameters in a packet
 #define DXL_MAX_PARAMS  240
@@ -22,7 +22,7 @@ struct dxl_packet {
         ui8 error;
     };  
     ui8 parameter_nb;
-    ui8 parameters[DXL_MAX_PARAMS];
+    ui8 parameters[DXL_MAX_PARAMS+30];
     bool process;
     ui8 dxl_state;
 };

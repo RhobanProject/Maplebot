@@ -288,7 +288,7 @@ static void dxl_serial_tick(volatile struct dxl_device *self)
                 syncReadResponse->process = true;
                 syncReadMode = false;
             } else if (serial->syncReadCount) {
-                if (serial->syncReadCurrent < 0) {
+                if (serial->syncReadCurrent == 0xff) {
                     // Sending the first packet
                     serial->syncReadCurrent = 0;
                     syncReadSendPacket(serial);
@@ -367,7 +367,7 @@ static void process(volatile struct dxl_device *self, volatile struct dxl_packet
                 if (devicePorts[id]) {
                     struct serial *port = serials[devicePorts[id]];
                     if (port->syncReadCount == 0) {
-                        port->syncReadCurrent = -1;
+                        port->syncReadCurrent = 0xff;
                         syncReadDevices++;
                     }
                     port->syncReadIds[port->syncReadCount] = packet->parameters[i+2];
@@ -423,7 +423,7 @@ void dxl_serial_init(volatile struct dxl_device *device, int index)
         serial->channel = DMA_CH2;
     }
             
-    serial->syncReadCurrent = -1;
+    serial->syncReadCurrent = 0xff;
     serial->syncReadCount = 0;
 
     initSerial(serial);

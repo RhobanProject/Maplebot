@@ -52,7 +52,7 @@ void dxl_process(
                                  // Read some data
                                  if (packet->id != DXL_BROADCAST) {
                                      ui8 addr = packet->parameters[0];
-                                     int length = packet->parameters[1];
+                                     unsigned int length = packet->parameters[1];
 
                                      if (length < sizeof(packet->parameters)) {
                                          device->packet.process = true;
